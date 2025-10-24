@@ -1,0 +1,108 @@
+{
+  "info": {
+    "name": "School API - Students",
+    "_postman_id": "school-students-collection-001",
+    "description": "Collection for Student endpoints: list, create, delete",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get all students",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/students",
+          "host": ["{{base_url}}"],
+          "path": ["api", "students"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Jan\",\n  \"lastName\": \"Kowalski\",\n  \"language\": \"ENGLISH\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/students",
+          "host": ["{{base_url}}"],
+          "path": ["api", "students"]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 201 or 200\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200,201]);",
+              "});",
+              "",
+              "try {",
+              "    const body = pm.response.json();",
+              "    if (body && body.id) {",
+              "        pm.environment.set(\"lastCreatedStudentId\", body.id);",
+              "    }",
+              "} catch (e) { /* ignore parse error */ }"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete student",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/students/{{studentId}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "students", "{{studentId}}"]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// If studentId env variable not set, try lastCreatedStudentId",
+              "if (!pm.variables.get(\"studentId\") && pm.environment.get(\"lastCreatedStudentId\")) {",
+              "    pm.variables.set(\"studentId\", pm.environment.get(\"lastCreatedStudentId\"));",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 204 or 200 or 404\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200,204,404]);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
