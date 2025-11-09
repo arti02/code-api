@@ -1,7 +1,7 @@
 package com.codingapi.controllers;
 
 import com.codingapi.dto.LessonDTO;
-import com.codingapi.dto.commands.ChangeTeacherCommand;
+import com.codingapi.dto.commands.ChangeLessonDateCommand;
 import com.codingapi.dto.commands.CreateLessonCommand;
 import com.codingapi.services.LessonService;
 import jakarta.validation.Valid;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/lessons")
+@RequestMapping("/api/v1/lessons")
 @RequiredArgsConstructor
 public class LessonController {
 
@@ -35,10 +35,10 @@ public class LessonController {
 		return ResponseEntity.noContent().build();
 	}
 
-	@PutMapping("/change-teacher")
-	public ResponseEntity<LessonDTO> changeTeacher(
-			@Valid @RequestBody ChangeTeacherCommand commandBody) {
-		return ResponseEntity.ok(lessonService.changeTeacher(commandBody));
+	@PutMapping("/change-date/{id}")
+	public ResponseEntity<LessonDTO> changeDate(@PathVariable("id") Long id,
+			@Valid @RequestBody ChangeLessonDateCommand cmd) {
+		return ResponseEntity.ok(lessonService.changeAndValidateDate(id, cmd));
 	}
 
 }

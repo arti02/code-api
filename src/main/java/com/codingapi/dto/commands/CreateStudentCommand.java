@@ -7,5 +7,6 @@ import jakarta.validation.constraints.NotNull;
 public record CreateStudentCommand(
 		@NotBlank(message = "First name cannot be blank") String firstName,
 		@NotBlank(message = "Last name cannot be blank") String lastName,
-		@NotNull(message = "Language must be selected") Language language) {
+		@NotNull(message = "Language must be selected") Language language,
+		@NotNull(message = "Teacher ID must be provided") Long teacherId) {
 }

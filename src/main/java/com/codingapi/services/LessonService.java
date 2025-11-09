@@ -1,80 +1,89 @@
 package com.codingapi.services;
 
 import com.codingapi.dto.LessonDTO;
-import com.codingapi.dto.commands.ChangeTeacherCommand;
+import com.codingapi.dto.commands.ChangeLessonDateCommand;
 import com.codingapi.dto.commands.CreateLessonCommand;
+import com.codingapi.exceptions.CodingApiException;
 import com.codingapi.mappers.LessonMapper;
 import com.codingapi.model.Lesson;
 import com.codingapi.model.Student;
 import com.codingapi.model.Teacher;
 import com.codingapi.repositories.LessonRepository;
-import com.codingapi.validators.LessonValidator;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.OptimisticLockException;
+import com.codingapi.repositories.StudentRepository;
+import com.codingapi.repositories.TeacherRepository;
+import com.codingapi.validators.CommonValidator;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import lombok.RequiredArgsConstructor;
+import org.hibernate.PessimisticLockException;
+import org.hibernate.exception.LockTimeoutException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.StreamSupport;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class LessonService {
 
 	private final LessonRepository lessonRepository;
-	private final LessonMapper lessonMapper;
-	private final StudentService studentService;
-	private final TeacherService teacherService;
-	private final LessonValidator lessonValidator;
+	private final StudentRepository studentRepository;
+	private final TeacherRepository teacherRepository;
+	private final CommonValidator commonValidator;
 
 	public List<LessonDTO> getAll() {
 		List<Lesson> lessons = lessonRepository.findLessonsWithActiveParticipants();
-		return lessons.stream().map(lessonMapper::getDTO).toList();
+		return lessons.stream().map(LessonMapper::toDto).toList();
 	}
 
 	@Transactional
 	public void deleteLesson(Long lessonId) {
-		lessonRepository.findById(lessonId).ifPresent(lesson -> {
-			lessonValidator.validateLessonDateNotInThePast(lesson.getLessonDate());
-			lessonRepository.deleteById(lessonId);
-		});
+		Lesson lesson = lessonRepository.findById(lessonId)
+				.orElseThrow(() -> new CodingApiException("Lesson not found with id: " + lessonId));
+		commonValidator.validateLessonDateNotInThePast(lesson.getDate());
+		lessonRepository.delete(lesson);
 	}
 
 	@Transactional
-	public LessonDTO addLesson(CreateLessonCommand createLessonCommand) {
-		Student student = studentService.findById(createLessonCommand.studentId());
-		Teacher teacher = teacherService.findById(createLessonCommand.teacherId());
-		lessonValidator.validate(teacher, student, createLessonCommand.lessonDate());
-		Lesson savedLesson = lessonRepository.save(lessonMapper.getEntity(teacher, student, createLessonCommand.lessonDate()));
+	public LessonDTO addLesson(CreateLessonCommand cmd) {
+		Teacher teacher = getTeacher(cmd.teacherId());
+		Student student = getStudent(cmd.studentId());
+		commonValidator.validate(teacher, student, cmd.date());
+		Lesson savedLesson = LessonMapper.toEntity(teacher, student, cmd.date());
 		try {
 			Lesson saved = lessonRepository.save(savedLesson);
-			return lessonMapper.getDTO(saved);
-		} catch (DataIntegrityViolationException ex) {
-			throw new RuntimeException("Teacher already has a lesson at this date");
+			return LessonMapper.toDto(saved);
+		} catch (PessimisticLockingFailureException | PessimisticLockException | LockTimeoutException e) {
+			throw new CodingApiException("Could not acquire lock on Teacher or Student, please retry");
 		}
 	}
 
-	@Transactional
-	public LessonDTO changeTeacher(ChangeTeacherCommand changeTeacherCommand) {
-		return lessonRepository.findById(changeTeacherCommand.lessonId())
-				.map(lesson -> changeTeacher(changeTeacherCommand, lesson))
-				.orElseThrow(() -> new EntityNotFoundException("Lesson not found with id: " + changeTeacherCommand.lessonId()));
+	private Student getStudent(Long studentId) {
+		return studentRepository.findByIdWithLock(studentId)
+				.orElseThrow(() -> new CodingApiException("Student not found with id: " + studentId));
 	}
 
-	private LessonDTO changeTeacher(ChangeTeacherCommand changeTeacherCommand, Lesson lesson) {
-		Teacher newTeacher = teacherService.findById(changeTeacherCommand.newTeacherId());
-		lessonValidator.validate(newTeacher, lesson.getStudent(), lesson.getLessonDate());
-		lesson.setTeacher(newTeacher);
+	private Teacher getTeacher(Long teacherId) {
+		return teacherRepository.findByIdWithLock(teacherId)
+				.orElseThrow(() -> new CodingApiException("Teacher not found with id: " + teacherId));
+	}
+
+	@Transactional
+	public LessonDTO changeAndValidateDate(Long lessonId, ChangeLessonDateCommand cmd) {
+		return lessonRepository.findByIdWithLock(lessonId)
+				.map(lesson -> changeAndValidateDate(lesson, cmd))
+				.orElseThrow(() -> new CodingApiException("Lesson not found with id: " + lessonId));
+	}
+
+	public LessonDTO changeAndValidateDate(Lesson lesson, ChangeLessonDateCommand cmd) {
+		Teacher teacher = getTeacher(lesson.getTeacher().getId());
+		Student student = getStudent(lesson.getStudent().getId());
+		commonValidator.validate(teacher, student, cmd.date());
+		lesson.setDate(cmd.date());
 		try {
 			Lesson result = lessonRepository.save(lesson);
-			return lessonMapper.getDTO(result);
-		} catch (ObjectOptimisticLockingFailureException | OptimisticLockException ex) {
-			throw new RuntimeException("Lesson was concurrently modified, please retry");
-		} catch (DataIntegrityViolationException ex) {
-			throw new RuntimeException("New teacher already has a lesson at this term");
+			return LessonMapper.toDto(result);
+		} catch (PessimisticLockingFailureException | PessimisticLockException | LockTimeoutException e) {
+			throw new CodingApiException("Could not acquire lock, please retry");
 		}
 	}
 }

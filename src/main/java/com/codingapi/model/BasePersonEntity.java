@@ -16,8 +16,4 @@ public abstract class BasePersonEntity {
 
 	@Version
 	private Integer version;
-
-	public String getEntityType() {
-		return this.getClass().getSimpleName();
-	}
 }

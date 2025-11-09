@@ -1,6 +1,7 @@
 package com.codingapi.controllers;
 
 import com.codingapi.dto.StudentDTO;
+import com.codingapi.dto.commands.ChangeTeacherCommand;
 import com.codingapi.dto.commands.CreateStudentCommand;
 import com.codingapi.services.StudentService;
 import jakarta.validation.Valid;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/students")
+@RequestMapping("/api/v1/students")
 @RequiredArgsConstructor
 public class StudentController {
 
@@ -35,4 +36,11 @@ public class StudentController {
 		studentService.deleteStudent(id);
 		return ResponseEntity.noContent().build();
 	}
+
+	@PutMapping("/change-teacher/{id}")
+	public ResponseEntity<StudentDTO> changeDate(@PathVariable("id") Long id,
+			@Valid @RequestBody ChangeTeacherCommand cmd) {
+		return ResponseEntity.ok(studentService.changeTeacher(id, cmd));
+	}
+
 }

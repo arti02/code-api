@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "firstName": "John",
+    "lastName": "Doe",
+    "languages": [
+      "EN",
+      "PL"
+    ]
+  },
+  {
+    "id": 2,
+    "firstName": "John",
+    "lastName": "Doe",
+    "languages": [
+      "EN",
+      "PL"
+    ]
+  }
+]

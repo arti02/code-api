@@ -1,31 +1,29 @@
 package com.codingapi.mappers;
 
 import com.codingapi.dto.LessonDTO;
-import com.codingapi.dto.commands.CreateLessonCommand;
+import com.codingapi.dto.StudentDTO;
+import com.codingapi.dto.TeacherDTO;
 import com.codingapi.model.Lesson;
 import com.codingapi.model.Student;
 import com.codingapi.model.Teacher;
-import org.springframework.stereotype.Service;
+import lombok.experimental.UtilityClass;
 
 import java.time.LocalDateTime;
 
-@Service
-public record LessonMapper(
-		StudentMapper studentMapper,
-		TeacherMapper teacherMapper) {
+@UtilityClass
+public final class LessonMapper {
 
-	public LessonDTO getDTO(Lesson lesson) {
-		return new LessonDTO(
-				studentMapper.getDTO(lesson.getStudent()),
-				teacherMapper.getDTO(lesson.getTeacher()),
-				lesson.getLessonDate());
+	public static LessonDTO toDto(Lesson lesson) {
+		StudentDTO studentDto = StudentMapper.toDto(lesson.getStudent());
+		TeacherDTO teacherDto = TeacherMapper.toDto(lesson.getTeacher());
+		return new LessonDTO(lesson.getId(), studentDto, teacherDto, lesson.getDate());
 	}
 
-	public Lesson getEntity(Teacher teacher, Student student, LocalDateTime lessonDate) {
+	public static Lesson toEntity(Teacher teacher, Student student, LocalDateTime lessonDate) {
 		Lesson lesson = new Lesson();
 		lesson.setTeacher(teacher);
 		lesson.setStudent(student);
-		lesson.setLessonDate(lessonDate);
+		lesson.setDate(lessonDate);
 		return lesson;
 	}
 }

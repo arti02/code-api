@@ -1,20 +1,31 @@
 package com.codingapi.model;
 
 import com.codingapi.enums.Language;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.hibernate.annotations.SQLDelete;
+import java.util.Set;
 
 @Entity
 @Getter
 @Setter
 @ToString(onlyExplicitlyIncluded = true)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@Table
+@SQLDelete(sql = "UPDATE student SET is_active = false WHERE id = ? AND version = ?")
 public class Student extends BasePersonEntity {
 
 	@Id
@@ -33,7 +44,11 @@ public class Student extends BasePersonEntity {
 	@ToString.Include
 	private Language language;
 
-	@OneToMany(mappedBy = "student", fetch = FetchType.LAZY)
-	private List<Lesson> lessons = new ArrayList<>();
+	@ManyToOne(optional = false)
+	@JoinColumn(name = "teacher_id", nullable = false)
+	private Teacher teacher;
+
+	@OneToMany(mappedBy = "student")
+	private Set<Lesson> lessons;
 
 }

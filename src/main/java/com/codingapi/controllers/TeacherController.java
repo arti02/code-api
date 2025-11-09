@@ -2,7 +2,6 @@ package com.codingapi.controllers;
 
 import com.codingapi.dto.TeacherDTO;
 import com.codingapi.dto.commands.CreateTeacherCommand;
-import com.codingapi.model.Teacher;
 import com.codingapi.services.TeacherService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,13 +12,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/teachers")
+@RequestMapping("/api/v1/teachers")
 @RequiredArgsConstructor
 public class TeacherController {
 	private final TeacherService teacherService;
 
 	@GetMapping
-	public ResponseEntity<List<Teacher>> getAllTeachers() {
+	public ResponseEntity<List<TeacherDTO>> getAllTeachers() {
 		return ResponseEntity.ok(teacherService.getAll());
 	}
 
@@ -29,7 +28,7 @@ public class TeacherController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(teacherDTO);
 	}
 
-	@DeleteMapping
+	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> deleteTeacher(@PathVariable Long id) {
 		teacherService.deleteTeacher(id);
 		return ResponseEntity.noContent().build();

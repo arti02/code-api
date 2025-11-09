@@ -9,5 +9,5 @@ import java.util.Set;
 public record CreateTeacherCommand(
 		@NotBlank(message = "First name cannot be blank") String firstName,
 		@NotBlank(message = "Last name cannot be blank") String lastName,
-		@NotEmpty(message = "At least one language must be selected") Set<Language> languages) {
+		@NotEmpty Set<Language> languages) {
 }

@@ -2,5 +2,5 @@ package com.codingapi.dto;
 
 import java.time.LocalDateTime;
 
-public record LessonDTO(StudentDTO student, TeacherDTO teacher, LocalDateTime lessonTime) {
+public record LessonDTO(Long id, StudentDTO student, TeacherDTO teacher, LocalDateTime date) {
 }
